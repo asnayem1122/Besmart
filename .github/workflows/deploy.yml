@@ -6,11 +6,20 @@ on:
       - main
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -20,22 +29,20 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install NPM Dependencies & Build Frontend
+      - name: Install Dependencies & Build Frontend
         run: |
           npm install
           npm run build
 
-      - name: Generate Static index.html from Vite Manifest
+      - name: Generate Static index.html
         run: |
-          cd public/build
-          CSS_FILE=$(cat manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.css')]" | head -1)
-          JS_FILE=$(cat manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.js')]" | head -1)
-          cd ../..
+          CSS_FILE=$(cat public/build/manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.css')]" | head -1)
+          JS_FILE=$(cat public/build/manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.js')]" | head -1)
           
-          mkdir -p dist
-          cp -r public/build dist/
+          mkdir -p _site
+          cp -r public/build _site/
           
-          cat > dist/index.html << HTMLEOF
+          cat > _site/index.html << HTMLEOF
           <!DOCTYPE html>
           <html lang="en" class="h-full">
           <head>
@@ -55,11 +62,18 @@ jobs:
           </html>
           HTMLEOF
           
-          touch dist/.nojekyll
-          echo "Generated index.html with CSS=$CSS_FILE JS=$JS_FILE"
+          cp _site/index.html _site/404.html
+          touch _site/.nojekyll
+          echo "Built with CSS=$CSS_FILE JS=$JS_FILE"
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+        id: deployment
+        uses: actions/deploy-pages@v4
