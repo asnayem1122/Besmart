@@ -1,4 +1,4 @@
-name: Deploy Besmart Web Application to GitHub Pages
+name: Deploy Besmart to GitHub Pages
 
 on:
   push:
@@ -15,35 +15,51 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: pdo_sqlite, mbstring, fileinfo, zip
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Install Composer Dependencies
-        run: composer install --no-interaction --prefer-dist --no-dev
-
-      - name: Install NPM Dependencies & Build Vue 3 Frontend
+      - name: Install NPM Dependencies & Build Frontend
         run: |
-          npm install --legacy-peer-deps
+          npm install
           npm run build
 
-      - name: Copy Built SPA Index to Output
+      - name: Generate Static index.html from Vite Manifest
         run: |
+          cd public/build
+          CSS_FILE=$(cat manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.css')]" | head -1)
+          JS_FILE=$(cat manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.js')]" | head -1)
+          cd ../..
+          
           mkdir -p dist
-          cp resources/views/app.blade.php dist/index.html
           cp -r public/build dist/
-          cp -r public/* dist/ 2>/dev/null || true
+          
+          cat > dist/index.html << HTMLEOF
+          <!DOCTYPE html>
+          <html lang="en" class="h-full">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Besmart — Shop Smart. Buy Better.</title>
+              <meta name="description" content="Modern Full-Stack E-Commerce and B2B Wholesale Marketplace Platform">
+              <link rel="preconnect" href="https://fonts.googleapis.com">
+              <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+              <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+              <link rel="stylesheet" href="build/${CSS_FILE}">
+          </head>
+          <body class="h-full">
+              <div id="app"></div>
+              <script type="module" src="build/${JS_FILE}"></script>
+          </body>
+          </html>
+          HTMLEOF
+          
           touch dist/.nojekyll
+          echo "Generated index.html with CSS=$CSS_FILE JS=$JS_FILE"
 
       - name: Deploy to GitHub Pages
-        uses: Peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
