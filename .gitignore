@@ -16,3 +16,4 @@ yarn-error.log
 .vscode
 *.sqlite-journal
 database/database.sqlite
+package-lock.json
