@@ -3,11 +3,18 @@
 [![Laravel Version](https://img.shields.io/badge/Laravel-12.x%20%2F%2011.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com)
 [![Vue Version](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)](https://vuejs.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
-[![License](https://img.shields.io/badge/License-MIT-blue.style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
 
 **Besmart** is a production-ready, high-density full-stack e-commerce mega-marketplace inspired by **Taobao (淘宝)** aesthetics and architecture. It seamlessly unifies B2C retail shopping, a specialized B2B wholesale portal with 10-year business intelligence analytics, a China bulk import landed cost engine, an AI shopping assistant (*Besmart AI*), and gamified customer rewards.
 
 > *"Shop Smart. Buy Better."*
+
+---
+
+## 🌐 Live Web Application Links
+
+- 🛍️ **Live App Frontend (GitHub Pages)**: [https://asnayem1122.github.io/Besmart/](https://asnayem1122.github.io/Besmart/)
+- 📦 **GitHub Source Repository**: [https://github.com/asnayem1122/Besmart](https://github.com/asnayem1122/Besmart)
 
 ---
 
@@ -67,8 +74,8 @@
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/besmart.git
-   cd besmart
+   git clone https://github.com/asnayem1122/Besmart.git
+   cd Besmart
    ```
 
 2. **Install Dependencies**:

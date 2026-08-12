@@ -1,0 +1,49 @@
+name: Deploy Besmart Web Application to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_sqlite, mbstring, fileinfo, zip
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --no-dev
+
+      - name: Install NPM Dependencies & Build Vue 3 Frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Copy Built SPA Index to Output
+        run: |
+          mkdir -p dist
+          cp resources/views/app.blade.php dist/index.html
+          cp -r public/build dist/
+          cp -r public/* dist/ 2>/dev/null || true
+          touch dist/.nojekyll
+
+      - name: Deploy to GitHub Pages
+        uses: Peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
