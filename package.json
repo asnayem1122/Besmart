@@ -17,11 +17,11 @@
     "vite": "^6.0.7"
   },
   "dependencies": {
-    "apexcharts": "^3.54.0",
+    "apexcharts": "3.54.1",
     "lucide-vue-next": "^0.469.0",
     "pinia": "^2.3.0",
     "vue": "^3.5.13",
-    "vue3-apexcharts": "^1.7.0",
+    "vue3-apexcharts": "1.7.0",
     "vue-router": "^4.5.0"
   }
 }
