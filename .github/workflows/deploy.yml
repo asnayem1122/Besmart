@@ -29,42 +29,18 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install Dependencies & Build Frontend
-        env:
-          VITE_BASE_URL: /Besmart/
-        run: |
-          npm install
-          npx vite build --base=/Besmart/ --outDir=_site
+      - name: Install Dependencies
+        run: npm install
 
-      - name: Generate index.html and 404.html
+      - name: Build for GitHub Pages
+        env:
+          VITE_GITHUB_PAGES: 'true'
+        run: npx vite build
+
+      - name: Create 404 fallback for SPA routing
         run: |
-          CSS_FILE=$(cat _site/manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.css')]" | head -1)
-          JS_FILE=$(cat _site/manifest.json | python3 -c "import sys,json; m=json.load(sys.stdin); [print(v['file']) for v in m.values() if v['file'].endswith('.js')]" | head -1)
-          
-          cat > _site/index.html << HTMLEOF
-          <!DOCTYPE html>
-          <html lang="en" class="h-full">
-          <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Besmart — Shop Smart. Buy Better.</title>
-              <meta name="description" content="Modern Full-Stack E-Commerce and B2B Wholesale Marketplace Platform">
-              <link rel="preconnect" href="https://fonts.googleapis.com">
-              <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-              <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-              <link rel="stylesheet" href="${CSS_FILE}">
-          </head>
-          <body class="h-full">
-              <div id="app"></div>
-              <script type="module" src="${JS_FILE}"></script>
-          </body>
-          </html>
-          HTMLEOF
-          
           cp _site/index.html _site/404.html
           touch _site/.nojekyll
-          rm -f _site/manifest.json
-          echo "Built with CSS=$CSS_FILE JS=$JS_FILE"
           ls -la _site/
 
       - name: Setup Pages

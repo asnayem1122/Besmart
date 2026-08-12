@@ -3,52 +3,41 @@ import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 
-const isGitHubPages = process.env.VITE_BASE_URL !== undefined;
+const isGitHubPages = process.env.VITE_GITHUB_PAGES === 'true';
+
+const vuePlugin = vue({
+  template: {
+    transformAssetUrls: {
+      base: null,
+      includeAbsolute: false,
+    },
+  },
+});
 
 export default defineConfig(
   isGitHubPages
     ? {
-        // GitHub Pages standalone SPA build
-        plugins: [
-          vue({
-            template: {
-              transformAssetUrls: {
-                base: null,
-                includeAbsolute: false,
-              },
-            },
-          }),
-        ],
+        // GitHub Pages: standard Vite SPA build using index.html as entry
+        base: '/Besmart/',
+        plugins: [vuePlugin],
         resolve: {
           alias: {
             '@': path.resolve(__dirname, 'resources/js'),
           },
         },
         build: {
-          manifest: true,
-          rollupOptions: {
-            input: {
-              main: path.resolve(__dirname, 'resources/js/main.js'),
-              app: path.resolve(__dirname, 'resources/css/app.css'),
-            },
-          },
+          outDir: '_site',
+          emptyOutDir: true,
         },
       }
     : {
-        // Laravel local development build
+        // Laravel local dev: uses laravel-vite-plugin
         plugins: [
           laravel({
             input: ['resources/css/app.css', 'resources/js/main.js'],
             refresh: true,
           }),
-          vue({
-            template: {
-              transformAssetUrls: {
-                base: null,
-                includeAbsolute: false,
-              },
-            },
-          }),
+          vuePlugin,
         ],
         resolve: {
           alias: {
