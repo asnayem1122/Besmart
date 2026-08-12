@@ -3,14 +3,39 @@ import { ref, computed } from 'vue';
 import axios from 'axios';
 import { useNotificationStore } from './notification';
 
+const fallbackProducts = [
+  { id: 1, name: 'Pro Ultra Gaming Laptop 16" OLED 240Hz', price: 169000, image_url: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500&q=80', moq: 1 },
+  { id: 2, name: 'Wireless ANC Noise-Canceling Headphones', price: 9900, image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80', moq: 5 },
+  { id: 3, name: 'Precision RGB Ergonomic Wireless Mouse', price: 3200, image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500&q=80', moq: 10 },
+  { id: 4, name: 'Mechanical RGB Hot-Swappable Keyboard', price: 7400, image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80', moq: 3 },
+  { id: 5, name: 'Smart Fitness Watch Series 9 GPS', price: 19500, image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80', moq: 2 },
+];
+
 export const useCartStore = defineStore('cart', () => {
-  const items = ref([]);
+  const items = ref(JSON.parse(localStorage.getItem('demo_cart_items') || '[]'));
   const subtotal = ref(0);
   const discount = ref(0);
   const shipping = ref(0);
   const total = ref(0);
-  const couponCode = ref('');
+  const couponCode = ref(localStorage.getItem('demo_coupon_code') || '');
   const isOpen = ref(false);
+
+  function recalculateLocal() {
+    subtotal.value = items.value.reduce((sum, item) => sum + (item.unit_price * item.quantity), 0);
+    if (couponCode.value === 'BESMART20') {
+      discount.value = Math.round(subtotal.value * 0.20);
+    } else if (couponCode.value === 'BESMART10') {
+      discount.value = Math.round(subtotal.value * 0.10);
+    } else {
+      discount.value = 0;
+    }
+    shipping.value = subtotal.value > 2000 || subtotal.value === 0 ? 0 : 120;
+    total.value = Math.max(0, subtotal.value - discount.value + shipping.value);
+    localStorage.setItem('demo_cart_items', JSON.stringify(items.value));
+    localStorage.setItem('demo_coupon_code', couponCode.value);
+  }
+
+  recalculateLocal();
 
   const itemCount = computed(() => items.value.reduce((acc, i) => acc + i.quantity, 0));
 
@@ -25,9 +50,10 @@ export const useCartStore = defineStore('cart', () => {
         shipping.value = d.shipping;
         total.value = d.total;
         couponCode.value = d.coupon_code || '';
+        return;
       }
     } catch (e) {
-      console.error('Failed to fetch cart', e);
+      recalculateLocal();
     }
   }
 
@@ -44,10 +70,35 @@ export const useCartStore = defineStore('cart', () => {
         total.value = d.total;
         isOpen.value = true;
         notify.show('Item added to your cart!', 'success');
+        return;
       }
     } catch (e) {
-      const msg = e.response?.data?.message || 'Error adding product to cart.';
-      notify.show(msg, 'error');
+      // Local fallback for GitHub Pages demo mode
+      const foundProduct = fallbackProducts.find(p => p.id === productId) || {
+        id: productId,
+        name: `Product #${productId}`,
+        price: 5000,
+        image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80'
+      };
+
+      const existingIndex = items.value.findIndex(i => i.product_id === productId);
+      if (existingIndex > -1) {
+        items.value[existingIndex].quantity += quantity;
+        items.value[existingIndex].subtotal = items.value[existingIndex].quantity * items.value[existingIndex].unit_price;
+      } else {
+        items.value.push({
+          id: Date.now(),
+          product_id: productId,
+          name: foundProduct.name,
+          image_url: foundProduct.image_url,
+          unit_price: foundProduct.price,
+          quantity: quantity,
+          subtotal: foundProduct.price * quantity,
+        });
+      }
+      recalculateLocal();
+      isOpen.value = true;
+      notify.show('Item added to your cart!', 'success');
     }
   }
 
@@ -62,9 +113,15 @@ export const useCartStore = defineStore('cart', () => {
         discount.value = d.discount;
         shipping.value = d.shipping;
         total.value = d.total;
+        return;
       }
     } catch (e) {
-      console.error(e);
+      const idx = items.value.findIndex(i => i.id === itemId);
+      if (idx > -1) {
+        items.value[idx].quantity = quantity;
+        items.value[idx].subtotal = items.value[idx].unit_price * quantity;
+        recalculateLocal();
+      }
     }
   }
 
@@ -80,9 +137,12 @@ export const useCartStore = defineStore('cart', () => {
         shipping.value = d.shipping;
         total.value = d.total;
         notify.show('Item removed', 'info');
+        return;
       }
     } catch (e) {
-      console.error(e);
+      items.value = items.value.filter(i => i.id !== itemId);
+      recalculateLocal();
+      notify.show('Item removed', 'info');
     }
   }
 
@@ -99,9 +159,12 @@ export const useCartStore = defineStore('cart', () => {
         total.value = d.total;
         couponCode.value = d.coupon_code;
         notify.show(`Coupon ${code} applied successfully!`, 'success');
+        return;
       }
     } catch (e) {
-      notify.show(e.response?.data?.message || 'Invalid coupon code', 'error');
+      couponCode.value = code.toUpperCase();
+      recalculateLocal();
+      notify.show(`Coupon ${code} applied!`, 'success');
     }
   }
 

@@ -67,7 +67,7 @@
         <button
           @click="spinWheel"
           :disabled="spinning"
-          class="absolute z-20 w-20 h-20 rounded-full bg-gradient-to-tr from-gold-600 via-gold-400 to-amber-200 text-gray-950 font-black text-sm shadow-[0_0_20px_rgba(255,215,0,0.8)] border-4 border-white flex flex-col items-center justify-center hover:scale-105 transition-transform disabled:opacity-80 disabled:hover:scale-100"
+          class="absolute z-20 w-20 h-20 rounded-full bg-gradient-to-tr from-gold-600 via-gold-400 to-amber-200 text-gray-950 font-black text-sm shadow-[0_0_20px_rgba(255,215,0,0.8)] border-4 border-white flex flex-col items-center justify-center hover:scale-105 transition-transform disabled:opacity-80 disabled:hover:scale-100 cursor-pointer"
         >
           <span class="text-xs uppercase tracking-tighter">{{ spinning ? 'SPINNING' : 'SPIN' }}</span>
           <span class="text-[10px]">👑</span>
@@ -90,7 +90,7 @@
         <button
           @click="spinWheel"
           :disabled="spinning"
-          class="w-full py-4 rounded-2xl taobao-gradient-orange hover:opacity-95 text-white font-black text-sm shadow-glow transition-all disabled:opacity-50 uppercase tracking-wider"
+          class="w-full py-4 rounded-2xl taobao-gradient-orange hover:opacity-95 text-white font-black text-sm shadow-glow transition-all disabled:opacity-50 uppercase tracking-wider cursor-pointer"
         >
           {{ spinning ? 'Spinning Wheel...' : '🎯 SPIN THE WHEEL NOW!' }}
         </button>
@@ -112,14 +112,14 @@ const rotationDegrees = ref(0);
 const result = ref(null);
 
 const slices = [
-  { label: '5% OFF', color: '#ff5000' },
-  { label: '10% OFF', color: '#9333ea' },
-  { label: '15% OFF', color: '#ff0036' },
-  { label: '20% OFF', color: '#ffc107' },
-  { label: 'FREE SHIP', color: '#10b981' },
-  { label: '৳100 OFF', color: '#0c8ee9' },
-  { label: '৳200 OFF', color: '#f59e0b' },
-  { label: 'NEXT TIME', color: '#475569' },
+  { label: '5% OFF', color: '#ff5000', code: 'BESMART5' },
+  { label: '10% OFF', color: '#9333ea', code: 'BESMART10' },
+  { label: '15% OFF', color: '#ff0036', code: 'BESMART15' },
+  { label: '20% OFF', color: '#ffc107', code: 'BESMART20' },
+  { label: 'FREE SHIP', color: '#10b981', code: 'FREESHIP' },
+  { label: '৳100 OFF', color: '#0c8ee9', code: 'TAOBAO100' },
+  { label: '৳200 OFF', color: '#f59e0b', code: 'TAOBAO200' },
+  { label: 'NEXT TIME', color: '#475569', code: null },
 ];
 
 function getSectorPath(index, total) {
@@ -162,27 +162,37 @@ async function spinWheel() {
   spinning.value = true;
   result.value = null;
 
+  let winningIndex = 3; // Default 20% OFF for demo mode
+  let rewardData = null;
+
   try {
     const res = await axios.post('/api/v1/wheel/spin');
-    const winningIndex = res.data.segment_index ?? 0;
-
-    // Calculate rotation so top pointer hits winning sector exactly
-    const sliceAngle = 360 / slices.length;
-    const targetAngle = 360 - (winningIndex * sliceAngle + sliceAngle / 2);
-    rotationDegrees.value += 1800 + targetAngle - (rotationDegrees.value % 360);
-
-    setTimeout(() => {
-      spinning.value = false;
-      result.value = res.data;
-      if (res.data.success) {
-        notify.show(`🎉 Congratulations! You won ${res.data.reward?.label}`, 'success');
-      } else {
-        notify.show(res.data.message, 'warning');
-      }
-    }, 4500);
+    if (res.data && res.data.segment_index !== undefined) {
+      winningIndex = res.data.segment_index;
+      rewardData = res.data;
+    }
   } catch (e) {
-    spinning.value = false;
-    notify.show('Error spinning wheel', 'error');
+    // Demo Mode Fallback for GitHub Pages static preview
+    winningIndex = Math.floor(Math.random() * (slices.length - 1)); // Random winning index
+    const wonSlice = slices[winningIndex];
+    rewardData = {
+      success: true,
+      reward: {
+        label: wonSlice.label,
+        coupon_code: wonSlice.code,
+      }
+    };
   }
+
+  // Calculate rotation so top pointer hits winning sector cleanly
+  const sliceAngle = 360 / slices.length;
+  const targetAngle = 360 - (winningIndex * sliceAngle + sliceAngle / 2);
+  rotationDegrees.value += 1800 + targetAngle - (rotationDegrees.value % 360);
+
+  setTimeout(() => {
+    spinning.value = false;
+    result.value = rewardData;
+    notify.show(`🎉 Congratulations! You won ${rewardData.reward?.label}`, 'success');
+  }, 4500);
 }
 </script>
