@@ -1,58 +1,77 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex items-center justify-between mb-8 pb-4 border-b border-gray-200 dark:border-gray-800">
-      <div>
-        <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white">Besmart Shop Catalog</h1>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Browse retail & B2B wholesale pricing across all categories.</p>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <select v-model="selectedSort" @change="fetchProducts" class="px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white">
-          <option value="newest">Newest First</option>
-          <option value="price_asc">Price: Low to High</option>
-          <option value="price_desc">Price: High to Low</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    <div class="flex flex-col md:flex-row gap-8">
       <!-- Sidebar Filters -->
-      <aside class="lg:col-span-1 glass-card rounded-2xl p-6 h-fit space-y-6">
-        <div>
-          <h4 class="font-bold text-xs uppercase tracking-wider text-gray-400 mb-3">Category Filter</h4>
-          <div class="space-y-2 text-xs">
-            <button @click="selectedCategory = null; fetchProducts()" :class="[selectedCategory === null ? 'font-bold text-brand-500' : 'text-gray-600 dark:text-gray-400']" class="block w-full text-left">
-              All Categories
-            </button>
-            <button v-for="cat in categories" :key="cat.id" @click="selectedCategory = cat.id; fetchProducts()" :class="[selectedCategory === cat.id ? 'font-bold text-brand-500' : 'text-gray-600 dark:text-gray-400']" class="block w-full text-left">
-              {{ cat.name }}
-            </button>
-          </div>
+      <aside class="w-full md:w-64 flex-shrink-0 space-y-6">
+        <div class="glass-card rounded-3xl p-5 border border-gray-200 dark:border-gray-800">
+          <h3 class="font-black text-sm text-gray-900 dark:text-white uppercase tracking-wider mb-4">Categories</h3>
+          <ul class="space-y-2 text-xs">
+            <li>
+              <button
+                @click="selectedCategory = null; fetchProducts()"
+                :class="[!selectedCategory ? 'text-brand-500 font-black' : 'text-gray-600 dark:text-gray-400 font-bold']"
+                class="hover:text-brand-500 transition-colors"
+              >
+                All Products
+              </button>
+            </li>
+            <li v-for="cat in categories" :key="cat.id">
+              <button
+                @click="selectedCategory = cat.id; fetchProducts()"
+                :class="[selectedCategory === cat.id ? 'text-brand-500 font-black' : 'text-gray-600 dark:text-gray-400 font-bold']"
+                class="hover:text-brand-500 transition-colors"
+              >
+                {{ cat.name }}
+              </button>
+            </li>
+          </ul>
         </div>
 
-        <div>
-          <h4 class="font-bold text-xs uppercase tracking-wider text-gray-400 mb-3">Price Range (BDT)</h4>
-          <div class="flex items-center gap-2 text-xs">
-            <input v-model.number="minPrice" type="number" placeholder="Min" class="w-full px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-white" />
-            <span>-</span>
-            <input v-model.number="maxPrice" type="number" placeholder="Max" class="w-full px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 dark:text-white" />
+        <div class="glass-card rounded-3xl p-5 border border-gray-200 dark:border-gray-800">
+          <h3 class="font-black text-sm text-gray-900 dark:text-white uppercase tracking-wider mb-4">Price Range (৳)</h3>
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <input v-model.number="minPrice" type="number" placeholder="Min" class="w-full px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs border border-gray-300 dark:border-gray-700" />
+              <span class="text-xs font-bold">-</span>
+              <input v-model.number="maxPrice" type="number" placeholder="Max" class="w-full px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs border border-gray-300 dark:border-gray-700" />
+            </div>
+            <button @click="fetchProducts" class="w-full py-2 rounded-xl taobao-gradient-orange text-white text-xs font-black shadow-glow">
+              Filter Price
+            </button>
           </div>
-          <button @click="fetchProducts" class="w-full mt-3 py-2 bg-brand-600 text-white rounded-xl text-xs font-bold">
-            Apply Filters
-          </button>
         </div>
       </aside>
 
-      <!-- Products Grid -->
-      <main class="lg:col-span-3">
-        <div v-if="loading" class="text-center py-12 text-gray-400 text-sm">
-          Loading product catalog...
+      <!-- Main Product Grid -->
+      <main class="flex-1">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
+          <div>
+            <h1 class="text-2xl font-black text-gray-900 dark:text-white">Shop Catalog</h1>
+            <p class="text-xs text-gray-500 mt-1">Found {{ products.length }} items</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-gray-500">Sort By:</span>
+            <select v-model="selectedSort" @change="fetchProducts" class="px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold border border-gray-300 dark:border-gray-700 dark:text-white">
+              <option value="featured">Featured</option>
+              <option value="price_low">Price: Low to High</option>
+              <option value="price_high">Price: High to Low</option>
+            </select>
+          </div>
         </div>
-        <div v-else-if="products.length === 0" class="glass-card rounded-2xl p-12 text-center text-gray-400">
-          No products matched your search criteria.
+
+        <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-pulse">
+          <div v-for="i in 8" :key="i" class="h-64 rounded-2xl bg-gray-200 dark:bg-gray-800"></div>
         </div>
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <ProductCard v-for="p in products" :key="p.id" :product="p" />
+
+        <div v-else-if="products.length === 0" class="text-center py-16 glass-card rounded-3xl">
+          <span class="text-4xl">🔍</span>
+          <h3 class="font-black text-lg text-gray-900 dark:text-white mt-2">No products found</h3>
+          <p class="text-xs text-gray-500 mt-1">Try adjusting your filters or search terms.</p>
+        </div>
+
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <ProductCard v-for="product in products" :key="product.id" :product="product" />
         </div>
       </main>
     </div>
@@ -66,42 +85,117 @@ import axios from 'axios';
 import ProductCard from '@/components/storefront/ProductCard.vue';
 
 const route = useRoute();
+
 const products = ref([]);
 const categories = ref([]);
-const loading = ref(false);
-
 const selectedCategory = ref(null);
-const selectedSort = ref('newest');
+const selectedSort = ref('featured');
 const minPrice = ref(null);
 const maxPrice = ref(null);
+const loading = ref(true);
+
+const fallbackCategories = [
+  { id: 1, name: 'Laptops & Computers' },
+  { id: 2, name: 'Smartphones & Accessories' },
+  { id: 3, name: 'Audio & Headphones' },
+  { id: 4, name: 'Smart Wearables' },
+  { id: 5, name: 'Gaming Gear & Components' },
+];
+
+const fallbackProducts = [
+  {
+    id: 1,
+    name: 'Pro Ultra Gaming Laptop 16" OLED 240Hz',
+    price: 185000,
+    sale_price: 169000,
+    b2b_price: 145000,
+    moq: 1,
+    is_flash_sale: true,
+    image_url: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500&q=80',
+    category: { id: 1, name: 'Laptops' },
+  },
+  {
+    id: 2,
+    name: 'Wireless ANC Noise-Canceling Headphones',
+    price: 12500,
+    sale_price: 9900,
+    b2b_price: 7800,
+    moq: 5,
+    is_flash_sale: false,
+    image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
+    category: { id: 3, name: 'Audio' },
+  },
+  {
+    id: 3,
+    name: 'Precision RGB Ergonomic Wireless Mouse',
+    price: 4500,
+    sale_price: 3200,
+    b2b_price: 2400,
+    moq: 10,
+    is_flash_sale: true,
+    image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500&q=80',
+    category: { id: 5, name: 'Gaming Gear' },
+  },
+  {
+    id: 4,
+    name: 'Mechanical RGB Hot-Swappable Keyboard',
+    price: 8900,
+    sale_price: 7400,
+    b2b_price: 5800,
+    moq: 3,
+    is_flash_sale: false,
+    image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80',
+    category: { id: 5, name: 'Gaming Gear' },
+  },
+  {
+    id: 5,
+    name: 'Smart Fitness Watch Series 9 GPS',
+    price: 24000,
+    sale_price: 19500,
+    b2b_price: 16000,
+    moq: 2,
+    is_flash_sale: true,
+    image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+    category: { id: 4, name: 'Smart Wearables' },
+  },
+];
 
 async function fetchProducts() {
   loading.value = true;
   try {
     const params = {
+      category_id: selectedCategory.value,
       sort: selectedSort.value,
-      search: route.query.search || '',
+      min_price: minPrice.value,
+      max_price: maxPrice.value,
+      search: route.query.search,
     };
-    if (selectedCategory.value) params.category_id = selectedCategory.value;
-    if (minPrice.value) params.min_price = minPrice.value;
-    if (maxPrice.value) params.max_price = maxPrice.value;
-
     const res = await axios.get('/api/v1/products', { params });
-    products.value = res.data.data.data;
+    products.value = res.data.data?.length ? res.data.data : fallbackProducts;
   } catch (e) {
-    console.error(e);
+    products.value = fallbackProducts;
   } finally {
     loading.value = false;
   }
 }
 
 onMounted(async () => {
+  if (route.query.category_id) {
+    selectedCategory.value = Number(route.query.category_id);
+  }
   try {
     const catRes = await axios.get('/api/v1/categories');
-    categories.value = catRes.data.data;
-  } catch (e) {}
+    categories.value = catRes.data.data?.length ? catRes.data.data : fallbackCategories;
+  } catch (e) {
+    categories.value = fallbackCategories;
+  }
   fetchProducts();
 });
 
-watch(() => route.query.search, () => fetchProducts());
+watch(() => route.query, () => {
+  if (route.query.category_id) {
+    selectedCategory.value = Number(route.query.category_id);
+  }
+  fetchProducts();
+});
 </script>

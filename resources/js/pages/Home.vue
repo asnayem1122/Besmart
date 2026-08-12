@@ -83,7 +83,7 @@
       </aside>
     </div>
 
-    <!-- Section 2: Taobao-Style Flash Deals (Seconds Sale) -->
+    <!-- Section 2: Taobao-Style Flash Deals -->
     <section v-if="flashSales.length" class="my-10 glass-card rounded-3xl p-6 border border-tmall-500/30">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div class="flex items-center gap-3">
@@ -192,18 +192,92 @@ const categories = ref([]);
 const featured = ref([]);
 const flashSales = ref([]);
 
+const fallbackCategories = [
+  { id: 1, name: 'Laptops & Computers' },
+  { id: 2, name: 'Smartphones & Accessories' },
+  { id: 3, name: 'Audio & Headphones' },
+  { id: 4, name: 'Smart Wearables' },
+  { id: 5, name: 'Gaming Gear & Components' },
+];
+
+const fallbackProducts = [
+  {
+    id: 1,
+    name: 'Pro Ultra Gaming Laptop 16" OLED 240Hz',
+    price: 185000,
+    sale_price: 169000,
+    b2b_price: 145000,
+    moq: 1,
+    is_flash_sale: true,
+    image_url: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=500&q=80',
+    category: { name: 'Laptops' },
+  },
+  {
+    id: 2,
+    name: 'Wireless ANC Noise-Canceling Headphones',
+    price: 12500,
+    sale_price: 9900,
+    b2b_price: 7800,
+    moq: 5,
+    is_flash_sale: false,
+    image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&q=80',
+    category: { name: 'Audio' },
+  },
+  {
+    id: 3,
+    name: 'Precision RGB Ergonomic Wireless Mouse',
+    price: 4500,
+    sale_price: 3200,
+    b2b_price: 2400,
+    moq: 10,
+    is_flash_sale: true,
+    image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=500&q=80',
+    category: { name: 'Gaming Gear' },
+  },
+  {
+    id: 4,
+    name: 'Mechanical RGB Hot-Swappable Keyboard',
+    price: 8900,
+    sale_price: 7400,
+    b2b_price: 5800,
+    moq: 3,
+    is_flash_sale: false,
+    image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500&q=80',
+    category: { name: 'Gaming Gear' },
+  },
+  {
+    id: 5,
+    name: 'Smart Fitness Watch Series 9 GPS',
+    price: 24000,
+    sale_price: 19500,
+    b2b_price: 16000,
+    moq: 2,
+    is_flash_sale: true,
+    image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&q=80',
+    category: { name: 'Smart Wearables' },
+  },
+];
+
 onMounted(async () => {
   try {
     const catRes = await axios.get('/api/v1/categories');
-    categories.value = catRes.data.data;
-
-    const fRes = await axios.get('/api/v1/products/featured');
-    featured.value = fRes.data.data;
-
-    const fsRes = await axios.get('/api/v1/products/flash-sales');
-    flashSales.value = fsRes.data.data;
+    categories.value = catRes.data.data?.length ? catRes.data.data : fallbackCategories;
   } catch (e) {
-    console.error(e);
+    categories.value = fallbackCategories;
+  }
+
+  try {
+    const fRes = await axios.get('/api/v1/products/featured');
+    featured.value = fRes.data.data?.length ? fRes.data.data : fallbackProducts;
+  } catch (e) {
+    featured.value = fallbackProducts;
+  }
+
+  try {
+    const fsRes = await axios.get('/api/v1/products/flash-sales');
+    flashSales.value = fsRes.data.data?.length ? fsRes.data.data : fallbackProducts.slice(0, 3);
+  } catch (e) {
+    flashSales.value = fallbackProducts.slice(0, 3);
   }
 });
 </script>
